@@ -23,7 +23,7 @@ def create_db():
 
 @app.get('/')
 def index():
-    return 'HЧё-то на странице'
+    return 'Чё-то на странице'
 
 
 @app.post('/login')
