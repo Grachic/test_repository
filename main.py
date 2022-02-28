@@ -1,2 +1,1 @@
-
-fsafsadgit add -A
+print("Hello, world!")
