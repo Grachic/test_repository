@@ -1,8 +1,35 @@
+from enum import Enum, auto
+
 import uvicorn
 from fastapi import FastAPI, Body
 import sqlite3
 
 app = FastAPI()
+
+
+class DBAction(Enum):
+    fetchone = auto()
+    fetchall = auto()
+    commit = auto()
+
+
+def db_action(sql: str, args: tuple, action: DBAction):
+    conn = sqlite3.connect('db.sqlite')
+    cursor = conn.cursor()
+
+    cursor.execute(sql, args)
+    if action == DBAction.fetchone:
+        result = cursor.fetchone()
+    elif action == DBAction.fetchall:
+        result = cursor.fetchall()
+    elif action == DBAction.commit:
+        conn.commit()
+        result = None
+
+    cursor.close()
+    conn.close()
+
+    return result
 
 
 @app.on_event('startup')
@@ -21,40 +48,34 @@ def create_db():
     cursor.close()
     conn.close()
 
+
 @app.get('/')
 def index():
-    return 'Чё-то на странице'
+    return 'Hello, world!'
 
 
 @app.post('/login')
 def login(username: str = Body(...), password: str = Body(...)):
-    conn = sqlite3.connect('db.sqlite')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        select * from users where username = ? and password = ?
-    ''', (username, password))
-    user = cursor.fetchone()
-    print(user)
-
-    cursor.close()
-    conn.close()
-    return user
+    return db_action(
+        '''
+            select * from users where username = ? and password = ?
+        ''',
+        (username, password),
+        DBAction.fetchone,
+    )
 
 
 @app.post('/test')
-def test():
-    conn = sqlite3.connect('db.sqlite')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        insert into users (username, password) values ('test', 'password')
-    ''')
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-    return None
+def registry(username: str = Body(...), password: str = Body(...), repeat_password: str = Body(...)):
+    if repeat_password != password:
+        return "Пароли не совпадают"
+    return db_action(
+        '''
+            insert into users (username, password) values (username, password)
+        ''',
+        (),
+        DBAction.commit,
+    )
 
 
 uvicorn.run(app)
