@@ -65,13 +65,12 @@ def login(username: str = Body(...), password: str = Body(...)):
     )
 
 
-@app.post('/test')
-def registry(username: str = Body(...), password: str = Body(...), repeat_password: str = Body(...)):
-    if repeat_password != password:
-        return "Пароли не совпадают"
+@app.post('/registry')
+def registry(name: str = Body(..., embed=True),
+                 pas: str = Body(..., embed=True)):
     return db_action(
-        '''
-            insert into users (username, password) values (username, password)
+        f'''
+            insert into users (username, password) values ('{name}', '{pas}')
         ''',
         (),
         DBAction.commit,
